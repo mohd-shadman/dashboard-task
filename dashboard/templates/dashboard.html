@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Dashboard</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .chart-container {
+            width: 800px;   /* Increase width */
+            height: 800px;  /* Increase height */
+            margin: auto;
+        }
+        .my-4 {
+            margin-top: 1.5rem !important;
+            margin-bottom: 1.5rem !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="my-4">Data Dashboard</h1>
+        
+        <!-- Intensity by Topic Chart -->
+        <div class="chart-container">
+            <canvas id="intensityChart"></canvas>
+        </div>
+        
+        <!-- Relevance by Region Chart -->
+        <div class="chart-container">
+            <canvas id="relevanceChart"></canvas>
+        </div>
+
+        <!-- Likelihood by Sector Chart -->
+        <div class="chart-container">
+            <canvas id="likelihoodChart"></canvas>
+        </div>
+        
+        <!-- Distribution by Sector Pie Chart -->
+        <div class="chart-container">
+            <canvas id="sectorPieChart"></canvas>
+        </div>
+        
+        <!-- Data Table -->
+        <h2 class="my-4">Detailed Data Table</h2>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Topic</th>
+                    <th>Sector</th>
+                    <th>Region</th>
+                    <th>Intensity</th>
+                    <th>Relevance</th>
+                    <th>Likelihood</th>
+                    <th>Source</th>
+                    <th>URL</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in data_entries %}
+                <tr>
+                    <td>{{ entry.title }}</td>
+                    <td>{{ entry.topic }}</td>
+                    <td>{{ entry.sector }}</td>
+                    <td>{{ entry.region }}</td>
+                    <td>{{ entry.intensity }}</td>
+                    <td>{{ entry.relevance }}</td>
+                    <td>{{ entry.likelihood }}</td>
+                    <td>{{ entry.source }}</td>
+                    <td><a href="{{ entry.url }}" target="_blank">Link</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Fetch data for the charts
+            fetch('/dashboard-data/')
+                .then(response => response.json())
+                .then(data => {
+                    const topics = [...new Set(data.map(entry => entry.topic))];
+                    const regions = [...new Set(data.map(entry => entry.region))];
+                    const sectors = [...new Set(data.map(entry => entry.sector))];
+                    
+                    const intensityData = topics.map(topic => {
+                        return data.filter(entry => entry.topic === topic)
+                                    .reduce((sum, entry) => sum + entry.intensity, 0);
+                    });
+
+                    const relevanceData = regions.map(region => {
+                        return data.filter(entry => entry.region === region)
+                                    .reduce((sum, entry) => sum + entry.relevance, 0);
+                    });
+
+                    const likelihoodData = sectors.map(sector => {
+                        return data.filter(entry => entry.sector === sector)
+                                    .reduce((sum, entry) => sum + entry.likelihood, 0);
+                    });
+
+                    const sectorDistribution = sectors.map(sector => {
+                        return data.filter(entry => entry.sector === sector).length;
+                    });
+
+                    // Intensity by Topic Chart
+                    const intensityChartCtx = document.getElementById('intensityChart').getContext('2d');
+                    new Chart(intensityChartCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: topics,
+                            datasets: [{
+                                label: 'Intensity by Topic',
+                                data: intensityData,
+                                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                borderColor: 'rgba(75, 192, 192, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Intensity'
+                                    }
+                                },
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Topic'
+                                    }
+                                }
+                            }
+                        }
+                    });
+
+                    // Relevance by Region Chart
+                    const relevanceChartCtx = document.getElementById('relevanceChart').getContext('2d');
+                    new Chart(relevanceChartCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: regions,
+                            datasets: [{
+                                label: 'Relevance by Region',
+                                data: relevanceData,
+                                backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                                borderColor: 'rgba(255, 159, 64, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Relevance'
+                                    }
+                                },
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Region'
+                                    }
+                                }
+                            }
+                        }
+                    });
+
+                    // Likelihood by Sector Chart
+                    const likelihoodChartCtx = document.getElementById('likelihoodChart').getContext('2d');
+                    new Chart(likelihoodChartCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: sectors,
+                            datasets: [{
+                                label: 'Likelihood by Sector',
+                                data: likelihoodData,
+                                backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                                borderColor: 'rgba(153, 102, 255, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Likelihood'
+                                    }
+                                },
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Sector'
+                                    }
+                                }
+                            }
+                        }
+                    });
+
+                    // Distribution by Sector Pie Chart
+                    const sectorPieChartCtx = document.getElementById('sectorPieChart').getContext('2d');
+                    new Chart(sectorPieChartCtx, {
+                        type: 'pie',
+                        data: {
+                            labels: sectors,
+                            datasets: [{
+                                label: 'Distribution by Sector',
+                                data: sectorDistribution,
+                                backgroundColor: [
+                                    'rgba(255, 99, 132, 0.2)',
+                                    'rgba(54, 162, 235, 0.2)',
+                                    'rgba(255, 206, 86, 0.2)',
+                                    'rgba(75, 192, 192, 0.2)',
+                                    'rgba(153, 102, 255, 0.2)',
+                                    'rgba(255, 159, 64, 0.2)'
+                                ],
+                                borderColor: [
+                                    'rgba(255, 99, 132, 1)',
+                                    'rgba(54, 162, 235, 1)',
+                                    'rgba(255, 206, 86, 1)',
+                                    'rgba(75, 192, 192, 1)',
+                                    'rgba(153, 102, 255, 1)',
+                                    'rgba(255, 159, 64, 1)'
+                                ],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true
+                        }
+                    });
+                })
+                .catch(error => console.error('Error fetching data:', error));
+        });
+    </script>
+</body>
+</html>
